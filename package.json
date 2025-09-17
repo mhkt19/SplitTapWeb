@@ -1,0 +1,19 @@
+{
+  "name": "splittap-web",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "firebase": "^12.2.1",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "scripts": {
+    "start": "npx serve -s public",
+    "dev": "npx parcel src/index.html --open",
+    "build": "npx parcel build src/index.html"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "process": "^0.11.10"
+  }
+}
