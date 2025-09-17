@@ -56580,7 +56580,7 @@ $RefreshReg$(_c, "UserPage");
   globalThis.$RefreshReg$ = prevRefreshReg;
   globalThis.$RefreshSig$ = prevRefreshSig;
 }
-},{"react/jsx-dev-runtime":"dVPUn","react":"jMk1U","@parcel/transformer-js/src/esmodule-helpers.js":"cGang","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"bLRZc","./OrderTab":"qF6qd"}],"qF6qd":[function(require,module,exports,__globalThis) {
+},{"react/jsx-dev-runtime":"dVPUn","react":"jMk1U","./OrderTab":"qF6qd","@parcel/transformer-js/src/esmodule-helpers.js":"cGang","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"bLRZc"}],"qF6qd":[function(require,module,exports,__globalThis) {
 var $parcel$ReactRefreshHelpers$99e3 = require("@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
 $parcel$ReactRefreshHelpers$99e3.init();
 var prevRefreshReg = globalThis.$RefreshReg$;
@@ -56682,14 +56682,22 @@ function OrderTab({ userName, tableNumber }) {
         if (!barId || !selected) return;
         setMessage('Ordering...');
         try {
-            await (0, _firestore.addDoc)((0, _firestore.collection)((0, _firebase.db), 'tableOrders', `${barId}_${tableNumber}`, 'orders'), {
-                menuItemId: selected.id,
+            // Build Firestore references for menuItem, table, and user
+            const menuItemRef = (0, _firestore.doc)((0, _firebase.db), 'bars', barId, 'menuItems', selected.id);
+            const tableSnap = await (0, _firestore.getDocs)((0, _firestore.query)((0, _firestore.collection)((0, _firebase.db), 'bars', barId, 'tables'), (0, _firestore.where)('number', '==', tableNumber)));
+            let tableRef;
+            if (!tableSnap.empty) tableRef = (0, _firestore.doc)((0, _firebase.db), 'bars', barId, 'tables', tableSnap.docs[0].id);
+            let orderData = {
+                menuItemId: menuItemRef,
                 quantity,
                 userName,
                 comment,
                 status: 'pending',
-                timestamp: new Date()
-            });
+                timestamp: new Date(),
+                tableRef
+            };
+            if (userName) orderData.userId = (0, _firestore.doc)((0, _firebase.db), 'users', userName);
+            await (0, _firestore.addDoc)((0, _firestore.collection)((0, _firebase.db), 'tableOrders', `${barId}_${tableNumber}`, 'orders'), orderData);
             setMessage('Order placed!');
             setSelected(null);
         } catch (e) {
@@ -56712,7 +56720,7 @@ function OrderTab({ userName, tableNumber }) {
                 }
             }, void 0, false, {
                 fileName: "src/OrderTab.js",
-                lineNumber: 87,
+                lineNumber: 99,
                 columnNumber: 7
             }, this),
             loading ? /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -56723,7 +56731,7 @@ function OrderTab({ userName, tableNumber }) {
                 children: "Loading menu..."
             }, void 0, false, {
                 fileName: "src/OrderTab.js",
-                lineNumber: 95,
+                lineNumber: 107,
                 columnNumber: 9
             }, this) : filtered.length === 0 ? /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
                 style: {
@@ -56733,7 +56741,7 @@ function OrderTab({ userName, tableNumber }) {
                 children: "No menu items found."
             }, void 0, false, {
                 fileName: "src/OrderTab.js",
-                lineNumber: 97,
+                lineNumber: 109,
                 columnNumber: 9
             }, this) : /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
                 children: filtered.map((item)=>/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -56755,7 +56763,7 @@ function OrderTab({ userName, tableNumber }) {
                                 children: [
                                     item.type && item.type.toLowerCase() === 'drink' && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)(DrinkIcon, {}, void 0, false, {
                                         fileName: "src/OrderTab.js",
-                                        lineNumber: 103,
+                                        lineNumber: 115,
                                         columnNumber: 70
                                     }, this),
                                     /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -56767,7 +56775,7 @@ function OrderTab({ userName, tableNumber }) {
                                                 children: item.name
                                             }, void 0, false, {
                                                 fileName: "src/OrderTab.js",
-                                                lineNumber: 105,
+                                                lineNumber: 117,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -56788,25 +56796,25 @@ function OrderTab({ userName, tableNumber }) {
                                                         children: item.type && item.type.toLowerCase() !== 'drink' ? `\xb7 ${item.type}` : ''
                                                     }, void 0, false, {
                                                         fileName: "src/OrderTab.js",
-                                                        lineNumber: 106,
+                                                        lineNumber: 118,
                                                         columnNumber: 102
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "src/OrderTab.js",
-                                                lineNumber: 106,
+                                                lineNumber: 118,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "src/OrderTab.js",
-                                        lineNumber: 104,
+                                        lineNumber: 116,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "src/OrderTab.js",
-                                lineNumber: 102,
+                                lineNumber: 114,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
@@ -56824,193 +56832,293 @@ function OrderTab({ userName, tableNumber }) {
                                 children: "Add"
                             }, void 0, false, {
                                 fileName: "src/OrderTab.js",
-                                lineNumber: 109,
+                                lineNumber: 121,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, item.id, true, {
                         fileName: "src/OrderTab.js",
-                        lineNumber: 101,
+                        lineNumber: 113,
                         columnNumber: 13
                     }, this))
             }, void 0, false, {
                 fileName: "src/OrderTab.js",
-                lineNumber: 99,
+                lineNumber: 111,
                 columnNumber: 9
             }, this),
-            selected && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                style: {
-                    background: '#fff',
-                    border: '1px solid #eee',
-                    borderRadius: 10,
-                    padding: 20,
-                    marginTop: 20,
-                    boxShadow: '0 2px 8px #eee'
-                },
-                children: [
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+            selected && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)((0, _jsxDevRuntime.Fragment), {
+                children: /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(60,40,100,0.18)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    },
+                    children: /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
                         style: {
-                            fontWeight: 600,
-                            marginBottom: 8
-                        },
-                        children: selected.name
-                    }, void 0, false, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 116,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                        style: {
-                            color: '#6c4eb6',
-                            fontWeight: 500,
-                            marginBottom: 8
+                            background: '#f8f3fc',
+                            borderRadius: 24,
+                            boxShadow: '0 4px 24px #cfc1f7',
+                            padding: 32,
+                            minWidth: 320,
+                            maxWidth: 360,
+                            width: '90vw',
+                            position: 'relative',
+                            textAlign: 'center'
                         },
                         children: [
-                            "$",
-                            selected.price?.toFixed(2) || '',
-                            " ",
-                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("span", {
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
                                 style: {
-                                    color: '#888',
-                                    fontWeight: 400,
-                                    fontSize: 13
+                                    fontWeight: 700,
+                                    fontSize: 22,
+                                    marginBottom: 18,
+                                    color: '#3d246c'
+                                },
+                                children: "Confirm Order"
+                            }, void 0, false, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 152,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    fontWeight: 600,
+                                    fontSize: 18,
+                                    marginBottom: 4
+                                },
+                                children: selected.name
+                            }, void 0, false, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 153,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    color: '#6c4eb6',
+                                    fontWeight: 500,
+                                    marginBottom: 12
                                 },
                                 children: [
-                                    "\xb7 ",
-                                    selected.type
+                                    "Price: $",
+                                    selected.price?.toFixed(2) || ''
                                 ]
                             }, void 0, true, {
                                 fileName: "src/OrderTab.js",
-                                lineNumber: 117,
-                                columnNumber: 115
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 117,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                        style: {
-                            marginBottom: 8
-                        },
-                        children: [
-                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("label", {
-                                children: "Quantity: "
-                            }, void 0, false, {
-                                fileName: "src/OrderTab.js",
-                                lineNumber: 119,
-                                columnNumber: 13
+                                lineNumber: 154,
+                                columnNumber: 15
                             }, this),
-                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("input", {
-                                type: "number",
-                                min: 1,
-                                value: quantity,
-                                onChange: (e)=>setQuantity(Number(e.target.value)),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
                                 style: {
-                                    width: 60,
-                                    marginLeft: 8
-                                }
+                                    fontWeight: 500,
+                                    marginBottom: 8
+                                },
+                                children: "Quantity:"
                             }, void 0, false, {
                                 fileName: "src/OrderTab.js",
-                                lineNumber: 120,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 118,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                        style: {
-                            marginBottom: 12
-                        },
-                        children: [
-                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("label", {
-                                children: "Comment: "
-                            }, void 0, false, {
-                                fileName: "src/OrderTab.js",
-                                lineNumber: 123,
-                                columnNumber: 13
+                                lineNumber: 155,
+                                columnNumber: 15
                             }, this),
-                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("input", {
-                                type: "text",
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 12
+                                },
+                                children: [
+                                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                        onClick: ()=>setQuantity((q)=>Math.max(1, q - 1)),
+                                        style: {
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: '#e0d7fa',
+                                            color: '#6c4eb6',
+                                            fontSize: 22,
+                                            fontWeight: 700,
+                                            marginRight: 16,
+                                            cursor: 'pointer'
+                                        },
+                                        children: "-"
+                                    }, void 0, false, {
+                                        fileName: "src/OrderTab.js",
+                                        lineNumber: 157,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("span", {
+                                        style: {
+                                            fontSize: 20,
+                                            fontWeight: 600,
+                                            minWidth: 32,
+                                            display: 'inline-block',
+                                            textAlign: 'center'
+                                        },
+                                        children: quantity
+                                    }, void 0, false, {
+                                        fileName: "src/OrderTab.js",
+                                        lineNumber: 158,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                        onClick: ()=>setQuantity((q)=>q + 1),
+                                        style: {
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: '#e0d7fa',
+                                            color: '#6c4eb6',
+                                            fontSize: 22,
+                                            fontWeight: 700,
+                                            marginLeft: 16,
+                                            cursor: 'pointer'
+                                        },
+                                        children: "+"
+                                    }, void 0, false, {
+                                        fileName: "src/OrderTab.js",
+                                        lineNumber: 159,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 156,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    fontWeight: 600,
+                                    fontSize: 17,
+                                    marginBottom: 8
+                                },
+                                children: [
+                                    "Total: $",
+                                    (selected.price * quantity).toFixed(2)
+                                ]
+                            }, void 0, true, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 161,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    fontWeight: 500,
+                                    marginBottom: 6,
+                                    textAlign: 'left'
+                                },
+                                children: "Additional Comments:"
+                            }, void 0, false, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 162,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("textarea", {
+                                placeholder: "Add any special requests or notes...",
                                 value: comment,
                                 onChange: (e)=>setComment(e.target.value),
                                 style: {
-                                    width: '70%',
-                                    marginLeft: 8
+                                    width: '100%',
+                                    minHeight: 60,
+                                    borderRadius: 10,
+                                    border: '1px solid #cfc1f7',
+                                    padding: 10,
+                                    fontSize: 15,
+                                    marginBottom: 18,
+                                    resize: 'none',
+                                    background: '#fff'
                                 }
                             }, void 0, false, {
                                 fileName: "src/OrderTab.js",
-                                lineNumber: 124,
-                                columnNumber: 13
+                                lineNumber: 163,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginTop: 10
+                                },
+                                children: [
+                                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                        onClick: ()=>setSelected(null),
+                                        style: {
+                                            background: 'none',
+                                            color: '#6c4eb6',
+                                            border: 'none',
+                                            fontWeight: 600,
+                                            fontSize: 16,
+                                            padding: '10px 0',
+                                            borderRadius: 20,
+                                            flex: 1,
+                                            cursor: 'pointer'
+                                        },
+                                        children: "Cancel"
+                                    }, void 0, false, {
+                                        fileName: "src/OrderTab.js",
+                                        lineNumber: 170,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                        onClick: confirmOrder,
+                                        style: {
+                                            background: '#6c4eb6',
+                                            color: '#fff',
+                                            border: 'none',
+                                            fontWeight: 600,
+                                            fontSize: 16,
+                                            padding: '10px 0',
+                                            borderRadius: 20,
+                                            flex: 1,
+                                            marginLeft: 16,
+                                            cursor: 'pointer'
+                                        },
+                                        children: "Add to Order"
+                                    }, void 0, false, {
+                                        fileName: "src/OrderTab.js",
+                                        lineNumber: 171,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 169,
+                                columnNumber: 15
+                            }, this),
+                            message && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    marginTop: 14,
+                                    color: message === 'Order placed!' ? 'green' : 'red',
+                                    fontWeight: 500
+                                },
+                                children: message
+                            }, void 0, false, {
+                                fileName: "src/OrderTab.js",
+                                lineNumber: 173,
+                                columnNumber: 27
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "src/OrderTab.js",
-                        lineNumber: 122,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
-                        onClick: confirmOrder,
-                        style: {
-                            background: '#6c4eb6',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 20,
-                            padding: '10px 30px',
-                            fontWeight: 600,
-                            fontSize: 15,
-                            cursor: 'pointer',
-                            marginRight: 10
-                        },
-                        children: "Confirm"
-                    }, void 0, false, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 126,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
-                        onClick: ()=>setSelected(null),
-                        style: {
-                            background: '#eee',
-                            color: '#6c4eb6',
-                            border: 'none',
-                            borderRadius: 20,
-                            padding: '10px 30px',
-                            fontWeight: 600,
-                            fontSize: 15,
-                            cursor: 'pointer'
-                        },
-                        children: "Cancel"
-                    }, void 0, false, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 127,
-                        columnNumber: 11
-                    }, this),
-                    message && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                        style: {
-                            marginTop: 10,
-                            color: message === 'Order placed!' ? 'green' : 'red'
-                        },
-                        children: message
-                    }, void 0, false, {
-                        fileName: "src/OrderTab.js",
-                        lineNumber: 128,
-                        columnNumber: 23
+                        lineNumber: 141,
+                        columnNumber: 13
                     }, this)
-                ]
-            }, void 0, true, {
-                fileName: "src/OrderTab.js",
-                lineNumber: 115,
-                columnNumber: 9
-            }, this)
+                }, void 0, false, {
+                    fileName: "src/OrderTab.js",
+                    lineNumber: 129,
+                    columnNumber: 11
+                }, this)
+            }, void 0, false)
         ]
     }, void 0, true, {
         fileName: "src/OrderTab.js",
-        lineNumber: 86,
+        lineNumber: 98,
         columnNumber: 5
     }, this);
 }

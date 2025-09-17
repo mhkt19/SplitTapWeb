@@ -5,7 +5,7 @@ const DrinkIcon = () => (
     <path d="M5 3h10l-1 6.5a4 4 0 0 1-8 0L5 3zm2.5 12h5l-.5 2a1 1 0 0 1-1 .8h-2a1 1 0 0 1-1-.8l-.5-2z" stroke="#6c4eb6" strokeWidth="1.2" fill="#eae2fa"/>
   </svg>
 );
-import { collection, getDocs, query, where, addDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
 
 function OrderTab({ userName, tableNumber }) {
@@ -67,14 +67,26 @@ function OrderTab({ userName, tableNumber }) {
     if (!barId || !selected) return;
     setMessage('Ordering...');
     try {
-      await addDoc(collection(db, 'tableOrders', `${barId}_${tableNumber}`, 'orders'), {
-        menuItemId: selected.id,
+      // Build Firestore references for menuItem, table, and user
+      const menuItemRef = doc(db, 'bars', barId, 'menuItems', selected.id);
+      const tableSnap = await getDocs(query(collection(db, 'bars', barId, 'tables'), where('number', '==', tableNumber)));
+      let tableRef;
+      if (!tableSnap.empty) {
+        tableRef = doc(db, 'bars', barId, 'tables', tableSnap.docs[0].id);
+      }
+      let orderData = {
+        menuItemId: menuItemRef,
         quantity,
         userName,
         comment,
         status: 'pending',
         timestamp: new Date(),
-      });
+        tableRef,
+      };
+      if (userName) {
+        orderData.userId = doc(db, 'users', userName);
+      }
+      await addDoc(collection(db, 'tableOrders', `${barId}_${tableNumber}`, 'orders'), orderData);
       setMessage('Order placed!');
       setSelected(null);
     } catch (e) {
@@ -112,21 +124,56 @@ function OrderTab({ userName, tableNumber }) {
         </div>
       )}
       {selected && (
-        <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: 10, padding: 20, marginTop: 20, boxShadow: '0 2px 8px #eee' }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>{selected.name}</div>
-          <div style={{ color: '#6c4eb6', fontWeight: 500, marginBottom: 8 }}>${selected.price?.toFixed(2) || ''} <span style={{ color: '#888', fontWeight: 400, fontSize: 13 }}>· {selected.type}</span></div>
-          <div style={{ marginBottom: 8 }}>
-            <label>Quantity: </label>
-            <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} style={{ width: 60, marginLeft: 8 }} />
+        <>
+          {/* Modal overlay */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(60,40,100,0.18)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              background: '#f8f3fc',
+              borderRadius: 24,
+              boxShadow: '0 4px 24px #cfc1f7',
+              padding: 32,
+              minWidth: 320,
+              maxWidth: 360,
+              width: '90vw',
+              position: 'relative',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: '#3d246c' }}>Confirm Order</div>
+              <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 4 }}>{selected.name}</div>
+              <div style={{ color: '#6c4eb6', fontWeight: 500, marginBottom: 12 }}>Price: ${selected.price?.toFixed(2) || ''}</div>
+              <div style={{ fontWeight: 500, marginBottom: 8 }}>Quantity:</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#e0d7fa', color: '#6c4eb6', fontSize: 22, fontWeight: 700, marginRight: 16, cursor: 'pointer' }}>-</button>
+                <span style={{ fontSize: 20, fontWeight: 600, minWidth: 32, display: 'inline-block', textAlign: 'center' }}>{quantity}</span>
+                <button onClick={() => setQuantity(q => q + 1)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#e0d7fa', color: '#6c4eb6', fontSize: 22, fontWeight: 700, marginLeft: 16, cursor: 'pointer' }}>+</button>
+              </div>
+              <div style={{ fontWeight: 600, fontSize: 17, marginBottom: 8 }}>Total: ${(selected.price * quantity).toFixed(2)}</div>
+              <div style={{ fontWeight: 500, marginBottom: 6, textAlign: 'left' }}>Additional Comments:</div>
+              <textarea
+                placeholder="Add any special requests or notes..."
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                style={{ width: '100%', minHeight: 60, borderRadius: 10, border: '1px solid #cfc1f7', padding: 10, fontSize: 15, marginBottom: 18, resize: 'none', background: '#fff' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+                <button onClick={() => setSelected(null)} style={{ background: 'none', color: '#6c4eb6', border: 'none', fontWeight: 600, fontSize: 16, padding: '10px 0', borderRadius: 20, flex: 1, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={confirmOrder} style={{ background: '#6c4eb6', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, padding: '10px 0', borderRadius: 20, flex: 1, marginLeft: 16, cursor: 'pointer' }}>Add to Order</button>
+              </div>
+              {message && <div style={{ marginTop: 14, color: message === 'Order placed!' ? 'green' : 'red', fontWeight: 500 }}>{message}</div>}
+            </div>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <label>Comment: </label>
-            <input type="text" value={comment} onChange={e => setComment(e.target.value)} style={{ width: '70%', marginLeft: 8 }} />
-          </div>
-          <button onClick={confirmOrder} style={{ background: '#6c4eb6', color: '#fff', border: 'none', borderRadius: 20, padding: '10px 30px', fontWeight: 600, fontSize: 15, cursor: 'pointer', marginRight: 10 }}>Confirm</button>
-          <button onClick={() => setSelected(null)} style={{ background: '#eee', color: '#6c4eb6', border: 'none', borderRadius: 20, padding: '10px 30px', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-          {message && <div style={{ marginTop: 10, color: message === 'Order placed!' ? 'green' : 'red' }}>{message}</div>}
-        </div>
+        </>
       )}
     </div>
   );
